@@ -4,7 +4,11 @@ import { program } from 'commander';
 import { JournalManager } from './services/JournalManager';
 import { AuthManager } from './services/AuthManager';
 import { CLIInterface } from './services/CLIInterface';
-import chalk from 'chalk';
+
+async function getChalk() {
+  const chalk = await import('chalk');
+  return chalk.default || chalk;
+}
 
 async function main() {
   const authManager = new AuthManager();
@@ -23,6 +27,7 @@ async function main() {
       try {
         await cli.initializeJournal();
       } catch (error) {
+        const chalk = await getChalk();
         console.error(chalk.red('Error initializing journal:'), error);
         process.exit(1);
       }
@@ -36,6 +41,7 @@ async function main() {
       try {
         await cli.writeEntry(options.title);
       } catch (error) {
+        const chalk = await getChalk();
         console.error(chalk.red('Error writing entry:'), error);
         process.exit(1);
       }
@@ -51,6 +57,7 @@ async function main() {
       try {
         await cli.readEntries(options);
       } catch (error) {
+        const chalk = await getChalk();
         console.error(chalk.red('Error reading entries:'), error);
         process.exit(1);
       }
@@ -64,6 +71,7 @@ async function main() {
       try {
         await cli.editEntry(options.id);
       } catch (error) {
+        const chalk = await getChalk();
         console.error(chalk.red('Error editing entry:'), error);
         process.exit(1);
       }
@@ -77,6 +85,7 @@ async function main() {
       try {
         await cli.deleteEntry(options.id);
       } catch (error) {
+        const chalk = await getChalk();
         console.error(chalk.red('Error deleting entry:'), error);
         process.exit(1);
       }
@@ -90,6 +99,7 @@ async function main() {
       try {
         await cli.createBackup(options.output);
       } catch (error) {
+        const chalk = await getChalk();
         console.error(chalk.red('Error creating backup:'), error);
         process.exit(1);
       }
@@ -103,6 +113,7 @@ async function main() {
       try {
         await cli.restoreBackup(options.input);
       } catch (error) {
+        const chalk = await getChalk();
         console.error(chalk.red('Error restoring backup:'), error);
         process.exit(1);
       }
@@ -115,6 +126,7 @@ async function main() {
       try {
         await cli.changePassword();
       } catch (error) {
+        const chalk = await getChalk();
         console.error(chalk.red('Error changing password:'), error);
         process.exit(1);
       }
@@ -127,6 +139,7 @@ async function main() {
       try {
         await cli.resetJournal();
       } catch (error) {
+        const chalk = await getChalk();
         console.error(chalk.red('Error resetting journal:'), error);
         process.exit(1);
       }
@@ -137,6 +150,7 @@ async function main() {
     try {
       await cli.interactiveMode();
     } catch (error) {
+      const chalk = await getChalk();
       console.error(chalk.red('Error in interactive mode:'), error);
       process.exit(1);
     }
@@ -146,7 +160,8 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch((error) => {
+  main().catch(async (error) => {
+    const chalk = await getChalk();
     console.error(chalk.red('Unexpected error:'), error);
     process.exit(1);
   });
