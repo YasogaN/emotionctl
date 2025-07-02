@@ -1,0 +1,17 @@
+node_modules/
+dist/
+coverage/
+*.log
+.env
+.DS_Store
+.vscode/
+.idea/
+*.tgz
+*.tar.gz
+
+# Journal data (for security)
+.emotionctl/
+
+# Backup files
+*.backup
+*-backup.json
