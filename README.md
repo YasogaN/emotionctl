@@ -28,10 +28,61 @@ As developers, we're often so focused on solving technical problems that we negl
 
 ### Prerequisites
 
-- Node.js 16+ and npm/yarn
+- Node.js 14+ and npm/yarn
 - Git
 
-### Setup
+### Quick Start with npx (Recommended)
+
+You can run EmotionCtl instantly without installation using npx:
+
+```bash
+# Initialize your safe space
+npx emotionctl init
+
+# Start writing
+npx emotionctl write
+
+# Read your entries
+npx emotionctl read
+```
+
+This downloads and runs the latest version each time, ensuring you always have the most up-to-date healing tools.
+
+### Global Installation
+
+For frequent use, you can install EmotionCtl globally on your system:
+
+```bash
+# Install directly from npm
+npm install -g emotionctl
+```
+
+Or with yarn:
+
+```bash
+# Install with yarn
+yarn global add emotionctl
+```
+
+Once installed globally, you can use `emotionctl` from anywhere on your system:
+
+```bash
+# Initialize your safe space
+emotionctl init
+
+# Start writing
+emotionctl write
+
+# Read your entries
+emotionctl read --list
+
+# Get help
+emotionctl --help
+```
+
+### Local Development Setup
+
+For development or contributing to the project:
 
 1. Clone or download this repository
 2. Install dependencies:
@@ -46,10 +97,10 @@ yarn install
 yarn build
 ```
 
-4. (Optional) Install globally:
+4. Run locally:
 
 ```bash
-npm install -g .
+node dist/index.js --help
 ```
 
 ## Usage
