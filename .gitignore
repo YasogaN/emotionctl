@@ -9,6 +9,11 @@ coverage/
 *.tgz
 *.tar.gz
 
+# Yarn files
+.yarn/
+!.yarn/releases
+!.yarn/plugins
+
 # Journal data (for security)
 .emotionctl/
 
