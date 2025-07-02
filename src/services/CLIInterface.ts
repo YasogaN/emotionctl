@@ -124,7 +124,9 @@ export class CLIInterface {
     console.log(chalk.gray('This is your judgment-free zone for processing difficult emotions.'));
     console.log();
 
-    const password = await this.promptPassword(true); try {
+    const password = await this.promptPassword(true);
+
+    try {
       await this.authManager.initialize(password);
       await this.journalManager.initialize(password);
 
