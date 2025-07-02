@@ -20,6 +20,7 @@ export class CLIInterface {
    * Displays the welcome banner
    */
   private displayBanner(): void {
+    console.clear();
     console.log(chalk.cyan('╔══════════════════════════════════════╗'));
     console.log(chalk.cyan('║          EmotionCtl Journal          ║'));
     console.log(chalk.cyan('║      Your Safe Space for Healing     ║'));
@@ -598,15 +599,19 @@ export class CLIInterface {
       try {
         switch (action) {
           case 'write':
+            this.displayBanner();
             await this.writeEntry();
             break;
           case 'read':
+            this.displayBanner();
             await this.readEntries({ list: true });
             break;
           case 'edit':
+            this.displayBanner();
             await this.editEntry();
             break;
           case 'search':
+            this.displayBanner();
             const { searchTerm } = await inquirer.prompt({
               type: 'input',
               name: 'searchTerm',
@@ -615,18 +620,22 @@ export class CLIInterface {
             await this.readEntries({ search: searchTerm });
             break;
           case 'delete':
+            this.displayBanner();
             await this.deleteEntry();
             break;
           case 'backup':
             await this.createBackup();
             break;
           case 'password':
+            this.displayBanner();
             await this.changePassword();
             break;
           case 'stats':
+            this.displayBanner();
             this.displayStats();
             break;
           case 'exit':
+            this.displayBanner();
             console.log(chalk.blue('Goodbye! 👋'));
             return;
         }
