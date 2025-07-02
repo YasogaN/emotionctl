@@ -46,9 +46,7 @@
     "url": "https://github.com/yourusername/emotionctl/issues"
   },
   "homepage": "https://github.com/yourusername/emotionctl#readme",
-  "bin": {
-    "emotionctl": "./dist/index.js"
-  },
+  "bin": "./dist/index.js",
   "dependencies": {
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",
