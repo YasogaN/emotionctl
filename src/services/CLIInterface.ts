@@ -770,6 +770,7 @@ export class CLIInterface {
     try {
       console.log(chalk.blue('Opening built-in editor...'));
       console.log(chalk.gray('Use Ctrl+X to save and exit, Ctrl+G for help'));
+      console.log(chalk.gray('If you can\'t type, try pressing Enter first to activate input'));
       console.log();
 
       const editor = new Editor();
@@ -778,7 +779,75 @@ export class CLIInterface {
       console.log(chalk.green('Editor closed.'));
       return content;
     } catch (error) {
-      throw new Error(`Failed to open editor: ${error}`);
+      console.log(chalk.yellow('Built-in editor failed, falling back to system editor...'));
+      return this.openSystemEditor(initialContent);
+    }
+  }
+
+  /**
+   * Fallback to system editor (notepad on Windows)
+   */
+  private async openSystemEditor(initialContent: string = ''): Promise<string> {
+    const chalk = await this.getChalk();
+    const fs = require('fs-extra');
+    const path = require('path');
+    const { spawn } = require('child_process');
+    const os = require('os');
+
+    try {
+      // Create a temporary file
+      const tempDir = os.tmpdir();
+      const tempFile = path.join(tempDir, `emotionctl-${Date.now()}.txt`);
+
+      // Write initial content to temp file
+      await fs.writeFile(tempFile, initialContent, 'utf8');
+
+      console.log(chalk.blue('Opening system editor...'));
+      console.log(chalk.gray(`Temp file: ${tempFile}`));
+      console.log(chalk.yellow('Close the editor when you\'re done to continue.'));
+
+      // Determine editor command based on OS
+      let editorCmd, editorArgs;
+      if (process.platform === 'win32') {
+        editorCmd = 'notepad.exe';
+        editorArgs = [tempFile];
+      } else if (process.platform === 'darwin') {
+        editorCmd = 'open';
+        editorArgs = ['-W', '-a', 'TextEdit', tempFile];
+      } else {
+        editorCmd = process.env.EDITOR || 'nano';
+        editorArgs = [tempFile];
+      }
+
+      // Spawn the editor
+      const child = spawn(editorCmd, editorArgs, { stdio: 'inherit' });
+
+      // Wait for editor to close
+      await new Promise<void>((resolve, reject) => {
+        child.on('close', (code: number | null) => {
+          if (code === 0) {
+            resolve();
+          } else {
+            reject(new Error(`Editor exited with code ${code}`));
+          }
+        });
+
+        child.on('error', (error: Error) => {
+          reject(error);
+        });
+      });
+
+      // Read the content back
+      const content = await fs.readFile(tempFile, 'utf8');
+
+      // Clean up temp file
+      await fs.unlink(tempFile);
+
+      console.log(chalk.green('Content loaded from editor.'));
+      return content;
+
+    } catch (error) {
+      throw new Error(`Failed to open system editor: ${error}`);
     }
   }
 }

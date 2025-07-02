@@ -8,13 +8,23 @@ export class Editor {
   private resolved: boolean = false;
 
   constructor() {
-    // Create blessed screen
+    // Create blessed screen with better Windows compatibility
     this.screen = blessed.screen({
       smartCSR: true,
-      title: 'EmotionCtl Editor'
+      title: 'EmotionCtl Editor',
+      cursor: {
+        artificial: true,
+        shape: 'line',
+        blink: true,
+        color: 'white'
+      },
+      debug: false,
+      warnings: false,
+      autoPadding: true,
+      fastCSR: true
     });
 
-    // Create main text area
+    // Create main text area with simplified input handling
     this.textBox = blessed.textarea({
       parent: this.screen,
       top: 0,
@@ -36,7 +46,7 @@ export class Editor {
       },
       scrollable: true,
       alwaysScroll: true,
-      mouse: true,
+      mouse: false,
       keys: true,
       vi: false,
       wrap: true,
@@ -62,6 +72,7 @@ export class Editor {
   }
 
   private setupKeyBindings(): void {
+    // Only bind specific control keys to avoid interfering with normal typing
     // Ctrl+X - Exit and save
     this.screen.key(['C-x'], () => {
       this.saveAndExit();
@@ -231,10 +242,13 @@ export class Editor {
       });
 
       // Handle process exit
-      process.on('SIGINT', () => {
+      const handleExit = () => {
         this.cleanup();
         resolve('');
-      });
+      };
+
+      process.on('SIGINT', handleExit);
+      process.on('SIGTERM', handleExit);
 
       // Resolve when screen is destroyed
       const checkDestroyed = () => {
