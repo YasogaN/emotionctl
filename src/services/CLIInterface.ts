@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import { format } from 'date-fns';
 import { AuthManager } from './AuthManager';
 import { JournalManager } from './JournalManager';
@@ -10,6 +9,7 @@ export class CLIInterface {
   private journalManager: JournalManager;
   private currentPassword: string = '';
   private inquirer: any = null;
+  private chalk: any = null;
 
   constructor(authManager: AuthManager, journalManager: JournalManager) {
     this.authManager = authManager;
@@ -28,9 +28,21 @@ export class CLIInterface {
   }
 
   /**
+   * Dynamically imports chalk
+   */
+  private async getChalk(): Promise<any> {
+    if (!this.chalk) {
+      const chalk = await import('chalk');
+      this.chalk = chalk.default || chalk;
+    }
+    return this.chalk;
+  }
+
+  /**
    * Displays the welcome banner
    */
-  private displayBanner(): void {
+  private async displayBanner(): Promise<void> {
+    const chalk = await this.getChalk();
     console.clear();
     console.log(chalk.cyan('╔══════════════════════════════════════╗'));
     console.log(chalk.cyan('║          EmotionCtl Journal          ║'));
@@ -43,6 +55,7 @@ export class CLIInterface {
    * Prompts for password with confirmation
    */
   private async promptPassword(confirm: boolean = false): Promise<string> {
+    const chalk = await this.getChalk();
     const inquirer = await this.getInquirer();
     const questions = [
       {
@@ -76,6 +89,7 @@ export class CLIInterface {
    * Authenticates the user
    */
   private async authenticate(): Promise<boolean> {
+    const chalk = await this.getChalk();
     if (this.currentPassword) {
       return true;
     }
@@ -97,7 +111,8 @@ export class CLIInterface {
    * Initializes a new journal
    */
   async initializeJournal(): Promise<void> {
-    this.displayBanner();
+    const chalk = await this.getChalk();
+    await this.displayBanner();
 
     if (await this.authManager.isInitialized()) {
       console.log(chalk.yellow('Journal is already initialized.'));
@@ -125,6 +140,7 @@ export class CLIInterface {
    * Writes a new journal entry
    */
   async writeEntry(title?: string): Promise<void> {
+    const chalk = await this.getChalk();
     if (!await this.authManager.isInitialized()) {
       console.log(chalk.red('Safe space not set up yet. Run "emotionctl init" to create your secure sanctuary.'));
       return;
@@ -220,6 +236,7 @@ export class CLIInterface {
    * Edits an existing journal entry
    */
   async editEntry(id?: string): Promise<void> {
+    const chalk = await this.getChalk();
     if (!await this.authManager.isInitialized()) {
       console.log(chalk.red('Journal not initialized. Run "emotionctl init" first.'));
       return;
@@ -370,6 +387,7 @@ export class CLIInterface {
    * Reads journal entries
    */
   async readEntries(options: ReadOptions): Promise<void> {
+    const chalk = await this.getChalk();
     if (!await this.authManager.isInitialized()) {
       console.log(chalk.red('Journal not initialized. Run "emotionctl init" first.'));
       return;
@@ -428,6 +446,7 @@ export class CLIInterface {
    * Deletes a journal entry
    */
   async deleteEntry(id?: string): Promise<void> {
+    const chalk = await this.getChalk();
     if (!await this.authManager.isInitialized()) {
       console.log(chalk.red('Journal not initialized. Run "emotionctl init" first.'));
       return;
@@ -500,6 +519,7 @@ export class CLIInterface {
    * Creates a backup
    */
   async createBackup(outputPath?: string): Promise<void> {
+    const chalk = await this.getChalk();
     if (!await this.authManager.isInitialized()) {
       console.log(chalk.red('Journal not initialized. Run "emotionctl init" first.'));
       return;
@@ -522,6 +542,7 @@ export class CLIInterface {
    * Restores from backup
    */
   async restoreBackup(inputPath?: string): Promise<void> {
+    const chalk = await this.getChalk();
     if (!inputPath) {
       console.log(chalk.red('Please provide the backup file path with --input'));
       return;
@@ -556,6 +577,7 @@ export class CLIInterface {
    * Changes the password
    */
   async changePassword(): Promise<void> {
+    const chalk = await this.getChalk();
     if (!await this.authManager.isInitialized()) {
       console.log(chalk.red('Journal not initialized. Run "emotionctl init" first.'));
       return;
@@ -582,7 +604,8 @@ export class CLIInterface {
    * Interactive mode
    */
   async interactiveMode(): Promise<void> {
-    this.displayBanner();
+    const chalk = await this.getChalk();
+    await this.displayBanner();
 
     if (!await this.authManager.isInitialized()) {
       console.log(chalk.yellow('Journal not initialized. Let\'s set it up!'));
@@ -622,19 +645,19 @@ export class CLIInterface {
       try {
         switch (action) {
           case 'write':
-            this.displayBanner();
+            await this.displayBanner();
             await this.writeEntry();
             break;
           case 'read':
-            this.displayBanner();
+            await this.displayBanner();
             await this.readEntries({ list: true });
             break;
           case 'edit':
-            this.displayBanner();
+            await this.displayBanner();
             await this.editEntry();
             break;
           case 'search':
-            this.displayBanner();
+            await this.displayBanner();
             const inquirer1 = await this.getInquirer();
             const { searchTerm } = await inquirer1.prompt({
               type: 'input',
@@ -644,22 +667,22 @@ export class CLIInterface {
             await this.readEntries({ search: searchTerm });
             break;
           case 'delete':
-            this.displayBanner();
+            await this.displayBanner();
             await this.deleteEntry();
             break;
           case 'backup':
             await this.createBackup();
             break;
           case 'password':
-            this.displayBanner();
+            await this.displayBanner();
             await this.changePassword();
             break;
           case 'stats':
-            this.displayBanner();
-            this.displayStats();
+            await this.displayBanner();
+            await this.displayStats();
             break;
           case 'exit':
-            this.displayBanner();
+            await this.displayBanner();
             console.log(chalk.blue('Goodbye! 👋'));
             return;
         }
@@ -674,7 +697,8 @@ export class CLIInterface {
   /**
    * Displays journal statistics
    */
-  private displayStats(): void {
+  private async displayStats(): Promise<void> {
+    const chalk = await this.getChalk();
     const stats = this.journalManager.getStats();
 
     console.log(chalk.cyan('\n📊 Journal Statistics'));
@@ -699,6 +723,7 @@ export class CLIInterface {
   async resetJournal(): Promise<void> {
     this.displayBanner();
 
+    const chalk = await this.getChalk();
     console.log(chalk.red('⚠️  WARNING: This will permanently delete all journal data!'));
     console.log(chalk.gray('This action cannot be undone unless you have a backup.'));
     console.log();
@@ -741,6 +766,7 @@ export class CLIInterface {
    * Opens the built-in editor for content input
    */
   private async openEditor(initialContent: string = ''): Promise<string> {
+    const chalk = await this.getChalk();
     try {
       console.log(chalk.blue('Opening built-in editor...'));
       console.log(chalk.gray('Use Ctrl+X to save and exit, Ctrl+G for help'));
