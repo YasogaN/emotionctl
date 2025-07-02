@@ -57,6 +57,19 @@ async function main() {
     });
 
   program
+    .command('edit')
+    .description('Edit an existing journal entry')
+    .option('-i, --id <id>', 'Entry ID to edit')
+    .action(async (options) => {
+      try {
+        await cli.editEntry(options.id);
+      } catch (error) {
+        console.error(chalk.red('Error editing entry:'), error);
+        process.exit(1);
+      }
+    });
+
+  program
     .command('delete')
     .description('Delete a journal entry')
     .option('-i, --id <id>', 'Entry ID to delete')

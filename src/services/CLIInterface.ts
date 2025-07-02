@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import { format } from 'date-fns';
 import { AuthManager } from './AuthManager';
 import { JournalManager } from './JournalManager';
+import { Editor } from './Editor';
 import { ReadOptions, MoodType } from '../types';
 
 export class CLIInterface {
@@ -133,12 +134,6 @@ export class CLIInterface {
 
     questions.push(
       {
-        type: 'editor',
-        name: 'content',
-        message: 'Express yourself freely - your thoughts are safe here (opens your default editor):',
-        validate: (input: string) => input.trim().length > 0 || 'It\'s okay to share what you\'re feeling'
-      },
-      {
         type: 'list',
         name: 'mood',
         message: 'How are you feeling right now?',
@@ -164,10 +159,35 @@ export class CLIInterface {
 
     const answers = await inquirer.prompt(questions);
 
+    // Open editor for content
+    let content: string;
+    try {
+      console.log();
+      console.log(chalk.blue('Express yourself freely - your thoughts are safe here.'));
+      content = await this.openEditor();
+
+      if (!content.trim()) {
+        console.log(chalk.yellow('Entry cancelled - no content provided.'));
+        return;
+      }
+    } catch (error) {
+      console.error(chalk.red('Failed to open editor:'), error);
+      console.log(chalk.yellow('Falling back to simple text input...'));
+
+      const fallbackAnswer = await inquirer.prompt([{
+        type: 'input',
+        name: 'content',
+        message: 'Write your entry here:',
+        validate: (input: string) => input.trim().length > 0 || 'It\'s okay to share what you\'re feeling'
+      }]);
+
+      content = fallbackAnswer.content;
+    }
+
     try {
       const entry = await this.journalManager.addEntry(
         title || answers.title,
-        answers.content,
+        content,
         this.currentPassword,
         answers.mood,
         answers.tags
@@ -178,6 +198,151 @@ export class CLIInterface {
       console.log(chalk.blue('Remember: Every step in processing your emotions is progress. 💙'));
     } catch (error) {
       console.error(chalk.red('Failed to save entry:'), error);
+    }
+  }
+
+  /**
+   * Edits an existing journal entry
+   */
+  async editEntry(id?: string): Promise<void> {
+    if (!await this.authManager.isInitialized()) {
+      console.log(chalk.red('Journal not initialized. Run "emotionctl init" first.'));
+      return;
+    }
+
+    if (!await this.authenticate()) {
+      return;
+    }
+
+    try {
+      let entryId = id;
+
+      if (!entryId) {
+        const entries = this.journalManager.getEntries();
+        if (entries.length === 0) {
+          console.log(chalk.yellow('No entries to edit.'));
+          return;
+        }
+
+        const choices = entries.map(entry => ({
+          name: `${format(entry.date, 'PPP')} - ${entry.title}`,
+          value: entry.id
+        }));
+
+        const { selectedId } = await inquirer.prompt({
+          type: 'list',
+          name: 'selectedId',
+          message: 'Select entry to edit:',
+          choices
+        });
+
+        entryId = selectedId;
+      }
+
+      const entry = this.journalManager.getEntryById(entryId!);
+      if (!entry) {
+        console.log(chalk.red('Entry not found.'));
+        return;
+      }
+
+      console.log(chalk.blue(`Editing entry: ${entry.title}`));
+      console.log(chalk.gray(`Created: ${format(entry.date, 'PPP')}`));
+      console.log();
+
+      const { action } = await inquirer.prompt({
+        type: 'list',
+        name: 'action',
+        message: 'What would you like to edit?',
+        choices: [
+          { name: 'Edit content (opens editor)', value: 'content' },
+          { name: 'Edit title', value: 'title' },
+          { name: 'Edit mood', value: 'mood' },
+          { name: 'Edit tags', value: 'tags' },
+          { name: 'Cancel', value: 'cancel' }
+        ]
+      });
+
+      if (action === 'cancel') {
+        console.log(chalk.yellow('Edit cancelled.'));
+        return;
+      }
+
+      const updates: any = {};
+
+      switch (action) {
+        case 'content':
+          try {
+            console.log();
+            console.log(chalk.blue('Opening editor with current content...'));
+            const newContent = await this.openEditor(entry.content);
+
+            if (newContent.trim() === entry.content.trim()) {
+              console.log(chalk.yellow('No changes made to content.'));
+              return;
+            }
+
+            updates.content = newContent;
+          } catch (error) {
+            console.error(chalk.red('Failed to open editor:'), error);
+            return;
+          }
+          break;
+
+        case 'title':
+          const { newTitle } = await inquirer.prompt({
+            type: 'input',
+            name: 'newTitle',
+            message: 'Enter new title:',
+            default: entry.title,
+            validate: (input: string) => input.trim().length > 0 || 'Title cannot be empty'
+          });
+          updates.title = newTitle;
+          break;
+
+        case 'mood':
+          const { newMood } = await inquirer.prompt({
+            type: 'list',
+            name: 'newMood',
+            message: 'Select new mood:',
+            default: entry.mood,
+            choices: [
+              { name: `${MoodType.SAD} Sad`, value: MoodType.SAD },
+              { name: `${MoodType.ANGRY} Angry`, value: MoodType.ANGRY },
+              { name: `${MoodType.ANXIOUS} Anxious`, value: MoodType.ANXIOUS },
+              { name: `${MoodType.NEUTRAL} Neutral`, value: MoodType.NEUTRAL },
+              { name: `${MoodType.CALM} Calm`, value: MoodType.CALM },
+              { name: `${MoodType.GRATEFUL} Grateful`, value: MoodType.GRATEFUL },
+              { name: `${MoodType.HAPPY} Happy`, value: MoodType.HAPPY },
+              { name: `${MoodType.EXCITED} Excited`, value: MoodType.EXCITED },
+              { name: 'Clear mood', value: undefined }
+            ]
+          });
+          updates.mood = newMood;
+          break;
+
+        case 'tags':
+          const { newTags } = await inquirer.prompt({
+            type: 'input',
+            name: 'newTags',
+            message: 'Enter tags (comma separated):',
+            default: entry.tags?.join(', ') || '',
+            filter: (input: string) => input.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+          });
+          updates.tags = newTags;
+          break;
+      }
+
+      const success = await this.journalManager.updateEntry(entryId!, updates, this.currentPassword);
+
+      if (success) {
+        console.log(chalk.green('✓ Entry updated successfully'));
+        console.log(chalk.blue('Your healing journey continues. 💙'));
+      } else {
+        console.log(chalk.red('Failed to update entry.'));
+      }
+
+    } catch (error) {
+      console.error(chalk.red('Failed to edit entry:'), error);
     }
   }
 
@@ -420,6 +585,7 @@ export class CLIInterface {
         choices: [
           { name: '📝 Write new entry', value: 'write' },
           { name: '📖 Read entries', value: 'read' },
+          { name: '✏️  Edit entry', value: 'edit' },
           { name: '🔍 Search entries', value: 'search' },
           { name: '🗑️  Delete entry', value: 'delete' },
           { name: '💾 Create backup', value: 'backup' },
@@ -436,6 +602,9 @@ export class CLIInterface {
             break;
           case 'read':
             await this.readEntries({ list: true });
+            break;
+          case 'edit':
+            await this.editEntry();
             break;
           case 'search':
             const { searchTerm } = await inquirer.prompt({
@@ -531,6 +700,25 @@ export class CLIInterface {
       }
     } else {
       console.log(chalk.gray('Reset cancelled.'));
+    }
+  }
+
+  /**
+   * Opens the built-in editor for content input
+   */
+  private async openEditor(initialContent: string = ''): Promise<string> {
+    try {
+      console.log(chalk.blue('Opening built-in editor...'));
+      console.log(chalk.gray('Use Ctrl+X to save and exit, Ctrl+G for help'));
+      console.log();
+
+      const editor = new Editor();
+      const content = await editor.edit(initialContent);
+
+      console.log(chalk.green('Editor closed.'));
+      return content;
+    } catch (error) {
+      throw new Error(`Failed to open editor: ${error}`);
     }
   }
 }
