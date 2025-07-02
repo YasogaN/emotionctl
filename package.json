@@ -36,16 +36,16 @@
     "developers",
     "safe-space"
   ],
-  "author": "",
+  "author": "Yasoga Nanayakkarawasam <contact@yasogan.dev>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/emotionctl.git"
+    "url": "git+https://github.com/YasogaN/emotionctl.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/emotionctl/issues"
+    "url": "https://github.com/YasogaN/emotionctl/issues"
   },
-  "homepage": "https://github.com/yourusername/emotionctl#readme",
+  "homepage": "https://github.com/YasogaN/emotionctl#readme",
   "bin": "./dist/index.js",
   "dependencies": {
     "blessed": "^0.1.81",
