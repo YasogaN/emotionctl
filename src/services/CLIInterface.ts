@@ -1,4 +1,3 @@
-import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { format } from 'date-fns';
 import { AuthManager } from './AuthManager';
@@ -10,10 +9,22 @@ export class CLIInterface {
   private authManager: AuthManager;
   private journalManager: JournalManager;
   private currentPassword: string = '';
+  private inquirer: any = null;
 
   constructor(authManager: AuthManager, journalManager: JournalManager) {
     this.authManager = authManager;
     this.journalManager = journalManager;
+  }
+
+  /**
+   * Dynamically imports inquirer
+   */
+  private async getInquirer(): Promise<any> {
+    if (!this.inquirer) {
+      const inquirer = await import('inquirer');
+      this.inquirer = inquirer.default || inquirer;
+    }
+    return this.inquirer;
   }
 
   /**
@@ -32,6 +43,7 @@ export class CLIInterface {
    * Prompts for password with confirmation
    */
   private async promptPassword(confirm: boolean = false): Promise<string> {
+    const inquirer = await this.getInquirer();
     const questions = [
       {
         type: 'password',
@@ -158,6 +170,7 @@ export class CLIInterface {
       }
     );
 
+    const inquirer = await this.getInquirer();
     const answers = await inquirer.prompt(questions);
 
     // Open editor for content
@@ -175,6 +188,7 @@ export class CLIInterface {
       console.error(chalk.red('Failed to open editor:'), error);
       console.log(chalk.yellow('Falling back to simple text input...'));
 
+      const inquirer = await this.getInquirer();
       const fallbackAnswer = await inquirer.prompt([{
         type: 'input',
         name: 'content',
@@ -230,6 +244,7 @@ export class CLIInterface {
           value: entry.id
         }));
 
+        const inquirer = await this.getInquirer();
         const { selectedId } = await inquirer.prompt({
           type: 'list',
           name: 'selectedId',
@@ -250,6 +265,7 @@ export class CLIInterface {
       console.log(chalk.gray(`Created: ${format(entry.date, 'PPP')}`));
       console.log();
 
+      const inquirer = await this.getInquirer();
       const { action } = await inquirer.prompt({
         type: 'list',
         name: 'action',
@@ -290,7 +306,8 @@ export class CLIInterface {
           break;
 
         case 'title':
-          const { newTitle } = await inquirer.prompt({
+          const inquirer1 = await this.getInquirer();
+          const { newTitle } = await inquirer1.prompt({
             type: 'input',
             name: 'newTitle',
             message: 'Enter new title:',
@@ -301,7 +318,8 @@ export class CLIInterface {
           break;
 
         case 'mood':
-          const { newMood } = await inquirer.prompt({
+          const inquirer2 = await this.getInquirer();
+          const { newMood } = await inquirer2.prompt({
             type: 'list',
             name: 'newMood',
             message: 'Select new mood:',
@@ -322,7 +340,8 @@ export class CLIInterface {
           break;
 
         case 'tags':
-          const { newTags } = await inquirer.prompt({
+          const inquirer3 = await this.getInquirer();
+          const { newTags } = await inquirer3.prompt({
             type: 'input',
             name: 'newTags',
             message: 'Enter tags (comma separated):',
@@ -431,6 +450,7 @@ export class CLIInterface {
           value: entry.id
         }));
 
+        const inquirer = await this.getInquirer();
         const { selectedId } = await inquirer.prompt({
           type: 'list',
           name: 'selectedId',
@@ -452,6 +472,7 @@ export class CLIInterface {
       console.log(chalk.gray(`Date: ${format(entry.date, 'PPP p')}`));
       console.log(`Content preview: ${entry.content.substring(0, 100)}...`);
 
+      const inquirer = await this.getInquirer();
       const { confirm } = await inquirer.prompt({
         type: 'confirm',
         name: 'confirm',
@@ -508,6 +529,7 @@ export class CLIInterface {
 
     console.log(chalk.yellow('⚠️  Warning: This will overwrite your current journal!'));
 
+    const inquirer = await this.getInquirer();
     const { confirm } = await inquirer.prompt({
       type: 'confirm',
       name: 'confirm',
@@ -579,6 +601,7 @@ export class CLIInterface {
     console.log();
 
     while (true) {
+      const inquirer = await this.getInquirer();
       const { action } = await inquirer.prompt({
         type: 'list',
         name: 'action',
@@ -612,7 +635,8 @@ export class CLIInterface {
             break;
           case 'search':
             this.displayBanner();
-            const { searchTerm } = await inquirer.prompt({
+            const inquirer1 = await this.getInquirer();
+            const { searchTerm } = await inquirer1.prompt({
               type: 'input',
               name: 'searchTerm',
               message: 'Enter search term:'
@@ -679,6 +703,7 @@ export class CLIInterface {
     console.log(chalk.gray('This action cannot be undone unless you have a backup.'));
     console.log();
 
+    const inquirer = await this.getInquirer();
     const { confirm } = await inquirer.prompt({
       type: 'confirm',
       name: 'confirm',
