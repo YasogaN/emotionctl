@@ -9,12 +9,19 @@ As developers, we're often so focused on solving technical problems that we negl
 ## Features
 
 🔐 **Complete Privacy**: Military-grade AES-256-CBC encryption keeps your deepest thoughts secure
+
 💙 **Safe Space**: Judgment-free zone designed for emotional processing and healing
+
 📝 **Expressive Journaling**: Write freely with mood tracking, tags, and rich text support
+
 🔍 **Pattern Recognition**: Search and analyze your emotional journey to understand triggers and growth
+
 💾 **Secure Backups**: Encrypted backups ensure your healing journey is never lost
+
 🎨 **Gentle Interface**: Calming terminal UI that respects your emotional state
+
 📊 **Progress Tracking**: Visualize your healing journey with detailed statistics
+
 🛡️ **Developer-Grade Security**: PBKDF2 password hashing and local-only storage
 
 ## Installation
@@ -167,7 +174,8 @@ src/
     ├── AuthManager.ts    # Password and authentication management
     ├── CryptoService.ts  # Encryption/decryption utilities
     ├── JournalManager.ts # Journal entry management
-    └── CLIInterface.ts   # User interface and interaction
+    ├── CLIInterface.ts   # User interface and interaction
+    └── Editor.ts         # Journal Editor
 ```
 
 ## Security Features
