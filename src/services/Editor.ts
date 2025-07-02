@@ -1,264 +1,171 @@
-import * as blessed from 'blessed';
+import * as readline from 'readline';
 
 export class Editor {
-  private screen: blessed.Widgets.Screen;
-  private textBox: blessed.Widgets.TextareaElement;
-  private helpText: blessed.Widgets.BoxElement;
   private content: string = '';
+  private lines: string[] = [];
   private resolved: boolean = false;
 
   constructor() {
-    // Create blessed screen with better Windows compatibility
-    this.screen = blessed.screen({
-      smartCSR: true,
-      title: 'EmotionCtl Editor',
-      cursor: {
-        artificial: true,
-        shape: 'line',
-        blink: true,
-        color: 'white'
-      },
-      debug: false,
-      warnings: false,
-      autoPadding: true,
-      fastCSR: true
-    });
-
-    // Create main text area with simplified input handling
-    this.textBox = blessed.textarea({
-      parent: this.screen,
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%-3',
-      border: {
-        type: 'line'
-      },
-      style: {
-        border: {
-          fg: 'cyan'
-        },
-        focus: {
-          border: {
-            fg: 'green'
-          }
-        }
-      },
-      scrollable: true,
-      alwaysScroll: true,
-      mouse: false,
-      keys: true,
-      vi: false,
-      wrap: true,
-      label: ' EmotionCtl Editor - Express yourself freely '
-    });
-
-    // Create help text at bottom
-    this.helpText = blessed.box({
-      parent: this.screen,
-      bottom: 0,
-      left: 0,
-      width: '100%',
-      height: 3,
-      content: '  ^X Exit and Save    ^G Get Help    ^O Write Out    ^W Where Is',
-      style: {
-        bg: 'blue',
-        fg: 'white'
-      },
-      tags: false
-    });
-
-    this.setupKeyBindings();
+    // Simple constructor - no setup needed for this approach
   }
 
-  private setupKeyBindings(): void {
-    // Only bind specific control keys to avoid interfering with normal typing
-    // Ctrl+X - Exit and save
-    this.screen.key(['C-x'], () => {
-      this.saveAndExit();
-    });
-
-    // Ctrl+G - Show help
-    this.screen.key(['C-g'], () => {
-      this.showHelp();
-    });
-
-    // Ctrl+O - Write out (save)
-    this.screen.key(['C-o'], () => {
-      this.save();
-    });
-
-    // Ctrl+C - Cancel without saving
-    this.screen.key(['C-c'], () => {
-      this.cancelEdit();
-    });
-
-    // ESC - Cancel without saving
-    this.screen.key(['escape'], () => {
-      this.cancelEdit();
-    });
-
-    // Focus the text box initially
-    this.textBox.focus();
+  private clearScreen(): void {
+    process.stdout.write('\x1b[2J\x1b[0f');
   }
 
-  private saveAndExit(): void {
-    this.content = this.textBox.getValue();
-    this.cleanup();
-  }
+  private displayContent(): void {
+    this.clearScreen();
+    console.log('╔══════════════════════════════════════════════════════════════╗');
+    console.log('║                    EmotionCtl Editor                         ║');
+    console.log('║           Your Safe Space for Emotional Expression           ║');
+    console.log('╠══════════════════════════════════════════════════════════════╣');
+    console.log('║ Commands:                                                    ║');
+    console.log('║   :save  - Save and exit                                     ║');
+    console.log('║   :quit  - Exit without saving                               ║');
+    console.log('║   :help  - Show this help                                    ║');
+    console.log('║   Enter empty line to finish typing                          ║');
+    console.log('╚══════════════════════════════════════════════════════════════╝');
+    console.log();
 
-  private save(): void {
-    this.content = this.textBox.getValue();
-    // Show save confirmation briefly
-    this.helpText.setContent('  File saved! Press Ctrl+X to exit or continue editing...');
-    this.screen.render();
-
-    setTimeout(() => {
-      this.helpText.setContent('  ^X Exit and Save    ^G Get Help    ^O Write Out    ^W Where Is');
-      this.screen.render();
-    }, 2000);
-  }
-
-  private cancelEdit(): void {
-    if (this.textBox.getValue().trim() === '') {
-      this.content = '';
-      this.cleanup();
-      return;
+    if (this.lines.length > 0) {
+      console.log('Current content:');
+      console.log('─'.repeat(60));
+      this.lines.forEach((line, index) => {
+        console.log(`${(index + 1).toString().padStart(3)}: ${line}`);
+      });
+      console.log('─'.repeat(60));
+      console.log();
     }
-
-    // Ask for confirmation if there's content
-    const confirmBox = blessed.question({
-      parent: this.screen,
-      top: 'center',
-      left: 'center',
-      width: 50,
-      height: 7,
-      border: {
-        type: 'line'
-      },
-      style: {
-        border: {
-          fg: 'red'
-        }
-      },
-      label: ' Confirm Exit '
-    });
-
-    confirmBox.ask('Exit without saving? (y/N)', (err, value) => {
-      if (value && value.toLowerCase() === 'y') {
-        this.content = '';
-        this.cleanup();
-      } else {
-        this.screen.remove(confirmBox);
-        this.textBox.focus();
-        this.screen.render();
-      }
-    });
   }
 
-  private showHelp(): void {
-    const helpBox = blessed.box({
-      parent: this.screen,
-      top: 'center',
-      left: 'center',
-      width: '80%',
-      height: '80%',
-      border: {
-        type: 'line'
-      },
-      style: {
-        border: {
-          fg: 'cyan'
-        }
-      },
-      label: ' EmotionCtl Editor Help ',
-      content: `
-  Welcome to the EmotionCtl nano-like editor!
-  
-  This is your safe space for expressing emotions and thoughts.
-  
-  Key Bindings:
-  
-  ^X  Exit and Save       - Save your entry and close the editor
-  ^O  Write Out          - Save your current work (without exiting)
-  ^G  Get Help           - Show this help screen
-  ^C  Cancel             - Exit without saving (with confirmation)
-  ESC Cancel             - Exit without saving (with confirmation)
-  
-  Navigation:
-  - Use arrow keys to move the cursor
-  - Page Up/Page Down for scrolling
-  - Home/End for beginning/end of line
-  
-  Tips:
-  - Your thoughts are automatically wrapped to fit the screen
-  - This is a judgment-free zone - express yourself freely
-  - Take your time - there's no rush
-  
-  Remember: Every step in processing your emotions is progress. 💙
-  
-  Press any key to continue...`,
-      scrollable: true,
-      alwaysScroll: true,
-      keys: true,
-      mouse: true
+  private async showHelp(): Promise<void> {
+    this.clearScreen();
+    console.log('╔══════════════════════════════════════════════════════════════╗');
+    console.log('║                    EmotionCtl Editor Help                    ║');
+    console.log('╚══════════════════════════════════════════════════════════════╝');
+    console.log();
+    console.log('This is your safe space for expressing emotions and thoughts.');
+    console.log();
+    console.log('How to use:');
+    console.log('• Type your content line by line');
+    console.log('• Press Enter to go to the next line');
+    console.log('• Enter an empty line to stop adding content');
+    console.log('• Use :save to save and exit');
+    console.log('• Use :quit to exit without saving');
+    console.log('• Use :help to see this help again');
+    console.log();
+    console.log('Remember: Every step in processing your emotions is progress. 💙');
+    console.log();
+    console.log('Press Enter to continue...');
+
+    return new Promise<void>((resolve) => {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+      });
+
+      rl.question('', () => {
+        rl.close();
+        resolve();
+      });
     });
-
-    helpBox.key(['*'], () => {
-      this.screen.remove(helpBox);
-      this.textBox.focus();
-      this.screen.render();
-    });
-
-    helpBox.focus();
-    this.screen.render();
-  }
-
-  private cleanup(): void {
-    if (!this.resolved) {
-      this.resolved = true;
-      this.screen.destroy();
-    }
   }
 
   /**
    * Opens the editor and returns the content when user saves and exits
    */
   public async edit(initialContent: string = ''): Promise<string> {
-    return new Promise<string>((resolve) => {
-      // Set initial content
-      this.textBox.setValue(initialContent);
+    return new Promise<string>(async (resolve) => {
+      this.lines = initialContent ? initialContent.split('\n') : [];
 
-      // Focus and render
-      this.textBox.focus();
-      this.screen.render();
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+      });
 
-      // Handle screen destruction
-      this.screen.on('destroy', () => {
+      const processInput = async (input: string) => {
+        const trimmedInput = input.trim();
+
+        // Handle commands
+        if (trimmedInput.startsWith(':')) {
+          switch (trimmedInput.toLowerCase()) {
+            case ':save':
+              this.content = this.lines.join('\n');
+              rl.close();
+              resolve(this.content);
+              return;
+
+            case ':quit':
+              if (this.lines.length > 0) {
+                rl.question('Exit without saving? (y/N): ', (answer) => {
+                  if (answer.toLowerCase() === 'y') {
+                    rl.close();
+                    resolve('');
+                  } else {
+                    this.displayContent();
+                    rl.prompt();
+                  }
+                });
+                return;
+              } else {
+                rl.close();
+                resolve('');
+                return;
+              }
+
+            case ':help':
+              await this.showHelp();
+              this.displayContent();
+              rl.prompt();
+              return;
+
+            default:
+              console.log(`Unknown command: ${trimmedInput}`);
+              console.log('Available commands: :save, :quit, :help');
+              rl.prompt();
+              return;
+          }
+        }
+
+        // Handle empty line (finish input)
+        if (trimmedInput === '') {
+          if (this.lines.length === 0) {
+            console.log('No content entered. Use :quit to exit or start typing.');
+            rl.prompt();
+            return;
+          }
+
+          console.log();
+          console.log('Content entry finished. Use :save to save and exit, or :quit to exit without saving.');
+          rl.prompt();
+          return;
+        }
+
+        // Add the line to content
+        this.lines.push(input);
+        rl.prompt();
+      };
+
+      // Set up the readline interface
+      rl.on('line', processInput);
+
+      rl.on('close', () => {
         if (!this.resolved) {
           this.resolved = true;
           resolve(this.content);
         }
       });
 
-      // Handle process exit
-      const handleExit = () => {
-        this.cleanup();
-        resolve('');
-      };
+      // Handle Ctrl+C
+      rl.on('SIGINT', () => {
+        console.log('\nUse :quit to exit or :save to save and exit');
+        rl.prompt();
+      });
 
-      process.on('SIGINT', handleExit);
-      process.on('SIGTERM', handleExit);
-
-      // Resolve when screen is destroyed
-      const checkDestroyed = () => {
-        if (this.resolved) {
-          resolve(this.content);
-        } else {
-          setTimeout(checkDestroyed, 100);
-        }
-      };
-      checkDestroyed();
+      // Start the editor
+      this.displayContent();
+      console.log('Start typing your entry (press Enter after each line):');
+      rl.prompt();
     });
   }
 }
