@@ -3,15 +3,24 @@
   "version": "1.0.0",
   "description": "A secure terminal-based journaling system designed as a safe space for developers going through heartbreak, breakups, or betrayal",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "scripts": {
     "build": "tsc",
+    "postbuild": "node -e \"const fs = require('fs'); const path = './dist/index.js'; if (fs.existsSync(path)) { const stats = fs.statSync(path); fs.chmodSync(path, stats.mode | parseInt('755', 8)); }\"",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "watch": "tsc --watch",
     "clean": "rimraf dist",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
-    "format": "prettier --write src/**/*.ts"
+    "format": "prettier --write src/**/*.ts",
+    "prepublishOnly": "yarn clean && yarn build"
   },
   "keywords": [
     "journal",
@@ -29,7 +38,17 @@
   ],
   "author": "",
   "license": "MIT",
-  "bin": "./dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/emotionctl.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/emotionctl/issues"
+  },
+  "homepage": "https://github.com/yourusername/emotionctl#readme",
+  "bin": {
+    "emotionctl": "./dist/index.js"
+  },
   "dependencies": {
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",
